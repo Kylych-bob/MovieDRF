@@ -1,0 +1,8 @@
+asgiref
+Django
+djangorestframework
+Pillow
+psycopg2-binary
+pytz
+sqlparse
+django-ckeditor
