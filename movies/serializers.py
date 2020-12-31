@@ -19,7 +19,7 @@ class RecursiveSerializer(serializers.Serializer):
         return serializer.data 
 
 #Список актеров и режиссеров
-class ActorListSerializer(serializers.Serializer):
+class ActorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Actor
         fields = ('id', 'name', 'image')
@@ -79,7 +79,7 @@ class CreateRatingSerializer(serializers.ModelSerializer):
         fields = ('star', 'movie')
 
     def create(self, validated_data):
-        rating = Rating.objects.update_or_create(
+        rating, _ = Rating.objects.update_or_create(
             ip = validated_data.get('ip', None),
             movie = validated_data.get('movie', None),
             defaults = {'star': validated_data.get('star')})

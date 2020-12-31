@@ -6,3 +6,4 @@ psycopg2-binary
 pytz
 sqlparse
 django-ckeditor
+django-filter

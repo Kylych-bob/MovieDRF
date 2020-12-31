@@ -1,7 +1,8 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from .service import get_client_ip, MovieFilter
 from rest_framework.response import Response
-from rest_framework.views import APIView
+# from rest_framework.views import APIView
 from rest_framework import generics
-from .service import get_client_ip
 from .models import Movie, Actor
 from django.db import models
 from .serializers import (MovieListSerializer, 
@@ -13,55 +14,50 @@ from .serializers import (MovieListSerializer,
 
 
 #Вывод список фильмов
-class MovieListView(APIView):
-    def get(self, request):
+class MovieListView(generics.ListAPIView):
+
+    serializer_class = MovieListSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = MovieFilter
+
+    def get_queryset(self):
         movies = Movie.objects.filter(draft=False).annotate(
-            rating_user=models.Count('ratings', filter = models.Q(ratings__ip=get_client_ip(request)))
+            rating_user=models.Count('ratings', filter = models.Q(ratings__ip=get_client_ip(self.request)))
         ).annotate(
             middle_star=models.Sum(models.F('ratings__star')) / models.Count(models.F('ratings'))
         )
-            # rating_user=models.Case(
-            #     models.When(ratings__ip=get_client_ip(request), then=True),
-            #         default=False,
-            #         output_field=models.BooleanField()
-            #     ),
-        # )
-        serializer = MovieListSerializer(movies, many=True)
-        return Response(serializer.data)
+        return movies
 
 #Вывод фильма
-class MovieDetailView(APIView):
-    def get(self, request, pk):
-        movie = Movie.objects.get(id=pk, draft=False)
-        serializer = MovieDetailSerializer(movie)
-        return Response(serializer.data)
+class MovieDetailView(generics.RetrieveAPIView):
+
+        queryset = Movie.objects.filter(draft=False)
+        serializer_class = MovieDetailSerializer
+
 
 #Добавление отзыва к фильму
-class ReviewCreateView(APIView):
-    def post(self, request):
-        review = ReviewCreateSerializer(data=request.data)
-        if review.is_valid():
-            review.save()
-        return Response(status=201)
+class ReviewCreateView(generics.CreateAPIView):
+
+    serializer_class = ReviewCreateSerializer
 
 #Добавление рейтинга к фильму
-class AddStarRatingView(APIView):
-
-    def post(self, request):
-        serializer = CreateRatingSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(ip=get_client_ip(request))
-            return Response(status=201)
-        else:
-            return Response(status=400)
+class AddStarRatingView(generics.CreateAPIView):
+    
+    serializer_class = CreateRatingSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(ip=get_client_ip(self.request))
+       
 
 #Список Актеров
 class ActorsListView(generics.ListAPIView):
+
     queryset = Actor.objects.all()
     serializer_class = ActorListSerializer
 
 #Вывод Актера или/и Режиссера
 class ActorsDetailView(generics.RetrieveAPIView):
+
     queryset = Actor.objects.all()
     serializer_class = ActorDetailSerializer
 
