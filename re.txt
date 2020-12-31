@@ -7,3 +7,5 @@ pytz
 sqlparse
 django-ckeditor
 django-filter
+djoser
+djangorestframework_simplejwt
